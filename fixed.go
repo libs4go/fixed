@@ -118,6 +118,13 @@ func New(decimals int, source Source) (*Number, error) {
 	}, nil
 }
 
+// Float .
+func (number *Number) Float() *big.Float {
+	component := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(number.Decimals)), nil)
+
+	return new(big.Float).Quo(new(big.Float).SetInt(number.RawValue), new(big.Float).SetInt(component))
+}
+
 // Cmp compares x and y and returns:
 //
 //   -1 if x <  y

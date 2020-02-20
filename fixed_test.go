@@ -1,6 +1,7 @@
 package fixed
 
 import (
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -23,4 +24,13 @@ func TestNeg(t *testing.T) {
 
 	require.Equal(t, val.RawValue, big.NewInt(100000000))
 
+}
+
+func TestRaw(t *testing.T) {
+	number := &Number{
+		RawValue: big.NewInt(1),
+		Decimals: 10,
+	}
+
+	println(fmt.Sprintf("%.10f", number.Float()))
 }
