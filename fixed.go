@@ -3,11 +3,11 @@ package fixed
 import (
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"math/big"
 	"strings"
 
 	"github.com/libs4go/errors"
+	"github.com/shopspring/decimal"
 )
 
 var errVendor = errors.WithVendor("fixed")
@@ -46,6 +46,7 @@ func BigInt(value *big.Int) Source {
 // Float .
 func Float(value float64) Source {
 	return func(decimals int) (*big.Int, error) {
+		decimal.NewFromFloat(value)
 		return BigFloat(big.NewFloat(value))(decimals)
 	}
 }
@@ -54,11 +55,17 @@ func Float(value float64) Source {
 func BigFloat(value *big.Float) Source {
 	return func(decimals int) (*big.Int, error) {
 
-		component := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimals)), nil)
+		dv, err := decimal.NewFromString(value.String())
 
-		result, _ := new(big.Float).Mul(value, new(big.Float).SetInt(component)).Int(nil)
+		if err != nil {
+			return nil, err
+		}
 
-		return result, nil
+		component := decimal.NewFromBigInt(big.NewInt(1), int32(decimals))
+
+		result := dv.Mul(component)
+
+		return result.BigInt(), nil
 	}
 }
 
@@ -83,8 +90,6 @@ func HexRawValue(source string) Source {
 
 		value := new(big.Int).SetBytes(valueBytes)
 
-		println(value.String())
-
 		if strings.HasPrefix(source, "-") {
 			value = value.Neg(value)
 		}
@@ -101,7 +106,9 @@ func (number *Number) String() string {
 
 // HexRawValue get rawvalue's hex string
 func (number *Number) HexRawValue() string {
-	return fmt.Sprintf("%x", number.RawValue)
+	// return fmt.Sprintf("%x", number.RawValue)
+
+	return hex.EncodeToString(number.RawValue.Bytes())
 }
 
 // New create fixed number object
@@ -120,9 +127,13 @@ func New(decimals int, source Source) (*Number, error) {
 
 // Float .
 func (number *Number) Float() *big.Float {
-	component := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(number.Decimals)), nil)
 
-	return new(big.Float).Quo(new(big.Float).SetInt(number.RawValue), new(big.Float).SetInt(component))
+	component := decimal.NewFromBigInt(big.NewInt(1), int32(number.Decimals))
+
+	result, _ := decimal.NewFromBigInt(number.RawValue, 0).QuoRem(component, 256)
+
+	return result.BigFloat()
+
 }
 
 // Cmp compares x and y and returns:

@@ -4,5 +4,6 @@ go 1.12
 
 require (
 	github.com/libs4go/errors v0.0.3
+	github.com/shopspring/decimal v1.2.0
 	github.com/stretchr/testify v1.4.0
 )
